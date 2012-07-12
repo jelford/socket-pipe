@@ -1,4 +1,4 @@
-= EchoServer =
+# EchoServer
 
 Usage:
 
@@ -9,7 +9,7 @@ address and port. Along the way, it gets logged. The idea is to be able to help
 diagnose problems in existing network applications, while abstracting away
 the job of logging all the data sent/received.
 
-== Build ==
+## Build 
 
 As far as I know, you shouldn't need to deal with any dependencies (it really is
 just a thin wrapper); everything should be as simple as:
@@ -25,13 +25,13 @@ Note the `--std=c++11` flag; if you have trouble compiling on a different
 compiler, the problem might be that it doesn't support the latest C++ (e.g. `auto`
 and range-based iterators, which are both used in the `Sockets` library)
 
-== License ==
+## License 
 
 Provided as-is. You are free to copy, redistribute, use, statically link, modify,
 and so on, with or without attribution. If you do find this useful, I'd love to
 hear about it.
 
-== Further work ==
+## Further work 
 
  * This is such a thin wrapper that it's hard to find seams. That said, if would be
     good to write some tests.
