@@ -28,7 +28,7 @@ and range-based iterators, which are both used in the `Sockets` library)
 ## License 
 
 Provided as-is. You are free to copy, redistribute, use, statically link, modify,
-and so on, with or without attribution. If you do find this useful, I'd love to
+and so on, with or without attribution. If you do find this useful, I'd like to
 hear about it.
 
 ## Further work 
