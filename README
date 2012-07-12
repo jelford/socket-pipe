@@ -2,7 +2,7 @@
 
 Usage:
 
-    EchoServer INBOUND_ADDRESS INBOUND_PORT TARGET_ADDRESS TARGET_PORT
+    EchoServer INBOUND_ADDRESS INBOUND_PORT TARGET_ADDRESS TARGET_PORT OUTPUT_FILE
 
 EchoServer will just forward all inbound data in `INBOUND_PORT` to the target
 address and port. Along the way, it gets logged. The idea is to be able to help
