@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include <fstream>      // std::ofstream (file io)
+#include <iomanip>      // setw
 #include <memory>       // std::unique_ptr
 #include <algorithm>   // std::find
 
@@ -14,7 +16,8 @@
 using namespace std;
 using namespace jelford;
 
-void forward(Socket& incoming, Socket& destination, bool& round_over)
+template <typename LOGGER>
+void forward(Socket& incoming, Socket& destination, bool& round_over, LOGGER& log)
 {
     auto data = incoming.read();
 
@@ -25,17 +28,86 @@ void forward(Socket& incoming, Socket& destination, bool& round_over)
         // Other end has hung up
         round_over = true;
 
-    auto tmp = data;
-    tmp.push_back('\0');
-    cerr << incoming.identify() << "->" << destination.identify() << ": " << &tmp[0] << endl;
+    log.log(incoming.identify(), destination.identify(), data);
 }
+
+class LogException : public std::exception
+{
+    private:
+        string msg;
+    public:
+        LogException(string msg) : msg(msg)
+        {}
+
+        virtual const char* what()
+        {
+            return msg.c_str();
+        }
+};
+
+class Logger
+{
+    private:
+        ofstream log_file;
+        ostream* out;
+    public:
+
+        Logger() : out(&std::cerr)
+        { }
+        
+        void open(std::string filename)
+        {
+            log_file.open(filename, ios::out);
+            if (!log_file.is_open())
+                throw LogException("Couldn't open " + filename + " for logging. Redirecting to STDERR.\n");
+            else
+                out = &log_file;
+        }
+
+        void log(int from, int to, std::vector<unsigned char> data)
+        {
+           
+            *out << dec << from << " -> " << to << " [" << data.size() << "]:\t";
+            for (auto d : data)
+                *out << hex << setfill('0') << setw(2) << static_cast<int>(d) << ":";
+            *out << "\n";
+
+            out->flush();
+        }
+
+        template <typename T>
+        Logger& operator<<(const T& data)
+        {
+            *out << data;
+            out->flush();
+            return *this;
+        }
+
+        virtual ~Logger()
+        {
+            log_file.flush();
+            log_file.close();
+        }
+
+};
+
 
 int main(int const argc, char const * const argv[])
 {
-    if (argc < 5)
+    if (argc < 6)
     {
         cout << "Usage: " << endl << argv[0] << " LISTEN_ADDRESS LISTEN_PORT TARGET_ADDRESS TARGET_PORT " << endl;
         return EXIT_FAILURE;
+    }
+
+    Logger logger;
+    try
+    {
+        logger.open(argv[5]);
+    }
+    catch (LogException e)
+    {
+        cerr << e.what();
     }
 
     // Hints for building both listen & connection addresses
@@ -54,9 +126,10 @@ int main(int const argc, char const * const argv[])
         Socket destination(target_address.family, SOCK_STREAM, 0);
         Socket listen_socket(listen_address.family, SOCK_STREAM, 0);
 
+        logger << "Incoming requests on: " << listen_socket.identify() << "\n";
+
         try
         {
-
             // Set sockets to be non-blocking
             listen_socket.set_nonblocking(true);
             destination.set_nonblocking(true);
@@ -67,7 +140,6 @@ int main(int const argc, char const * const argv[])
             listen_socket.bind_to(listen_address);
 
             // Listen for incoming connections
-            cout << "Listening for incoming data" << endl;
             listen_socket.listen(32);
 
             // The main loop just awaits incoming connections, forwards
@@ -75,15 +147,14 @@ int main(int const argc, char const * const argv[])
             // discards the socket and awaits new incoming connections.
             do
             {
+
                 // Block for an incoming connection
-                cout << "Awaiting incoming connection" << endl;
                 wait_for_read(&listen_socket);
                 Socket incoming = listen_socket.accept(NULL, NULL);
-                cout << "Accepted incoming connection" << endl;
 
                 // Establish connection to target 
-                cout << "Connecting to server..." << endl;
                 destination.connect(target_address); 
+                logger << "New session (incoming/outgoing data on: " << incoming.identify() << "/" << destination.identify() << ")\n";
 
 
                 // We select on vectors of sockets
@@ -95,7 +166,6 @@ int main(int const argc, char const * const argv[])
                 bool round_over = false;
                 do
                 {
-                    cerr << "doing select for read data" << endl;
                     auto readable = select_for_reading(sockets);
 
                     for (auto r_socket : readable)
@@ -103,11 +173,11 @@ int main(int const argc, char const * const argv[])
                         // Get pointers to sockets back
                         if (r_socket == &incoming)
                         {
-                            forward(incoming, destination, round_over);
+                            forward(incoming, destination, round_over, logger);
                         }
                         else if (r_socket == &destination)
                         {
-                            forward(destination, incoming, round_over);
+                            forward(destination, incoming, round_over, logger);
                         }
                         else
                             cerr << "Unknown socket found in read set!" << endl;
