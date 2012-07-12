@@ -6,6 +6,9 @@ set (EchoServer_VERSION_MINOR 0)
 
 # Set the compiler to use C++11
 add_definitions("-std=c++11")
+add_definitions("-Wall")
+add_definitions("-pedantic")
+add_definitions("-O3")
 
 # Include the Sockets submodule
 include_directories ("${PROJECT_SOURCE_DIR}"Sockets/include/)
