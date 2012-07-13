@@ -11,6 +11,8 @@
 
 #include <string>
 
+#include <execinfo.h>
+
 #include "Socket.hpp"
 
 using namespace std;
@@ -19,6 +21,7 @@ using namespace jelford;
 template <typename LOGGER>
 void forward(Socket& incoming, Socket& destination, bool& round_over, LOGGER& log)
 {
+    wait_for_read(&incoming);
     auto data = incoming.read();
 
     wait_for_write(&destination);
