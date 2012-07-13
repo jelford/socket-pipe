@@ -121,8 +121,8 @@ int main(int const argc, char const * const argv[])
 
     try
     {
-        Address listen_address = Address(argv[1], argv[2], hints);
-        Address target_address = Address(argv[3], argv[4], hints);
+        Address listen_address(argv[1], argv[2], hints);
+        Address target_address(argv[3], argv[4], hints);
     
 
         // Set up two tcp connections
